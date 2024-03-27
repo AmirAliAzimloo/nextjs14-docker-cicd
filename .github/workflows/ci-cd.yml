@@ -1,0 +1,44 @@
+name: Continuous Integration and Continuous Deployment on Heroku
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # CI
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
+
+      - name: Use Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20.9.0'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Run format check
+        run: npm run format
+
+      - name: Check commit messages
+        uses: wagoid/commitlint-github-action@v3
+        with:
+          configFile: commitlint.config.cjs
+
+      - name: Build Docker Image
+        run: docker build -t nextjs14-docker-cicd:1.0 .
+
+        # If we do this, we don't need to build image during CD below.
+        #   - name: Push Docker Image to Registry
+        #     run: |
+        #       docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        #       docker push nextjs14cicd-docker:1.0
